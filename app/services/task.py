@@ -1,4 +1,5 @@
 import math
+import asyncio
 import os.path
 import re
 from os import path
@@ -139,7 +140,7 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
         return [material_info.url for material_info in materials]
     else:
         logger.info(f"\n\n## downloading videos from {params.video_source}")
-        downloaded_videos = material.download_videos(
+        downloaded_videos = asyncio.run(material.download_videos(
             task_id=task_id,
             search_terms=video_terms,
             source=params.video_source,
@@ -147,7 +148,7 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
             video_contact_mode=params.video_concat_mode,
             audio_duration=audio_duration * params.video_count,
             max_clip_duration=params.video_clip_duration,
-        )
+        ))
         if not downloaded_videos:
             sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
             logger.error(
@@ -328,8 +329,10 @@ if __name__ == "__main__":
     task_id = "task_id"
     params = VideoParams(
         video_subject="金钱的作用",
-        voice_name="zh-CN-XiaoyiNeural-Female",
-        voice_rate=1.0,
+        video_script="最近几天股市非常火，已经有一些朋友开始借钱炒股了，提醒大家当朋友或亲人向你借钱炒股时，一定要保持谨慎，因为股市充满风险，投资失败的可能性很高，不仅可能导致金钱的损失，还可能影响彼此的关系。即使决定借钱，也务必签订借条，以明确双方的责任，保障自己的权益。借条不仅是法律保护的依据，也是彼此信任的体现，能够有效避免未来的纠纷和误解。因此，在涉及借款的情况下，不论对方有多亲近，都要采取必要的保护措施，以避免不必要的财务损失和人际冲突。",
+        video_terms="loan caution, stock market risk, borrow responsibly, loan agreement, protect finances",
+        voice_name="zh-CN-YunjianNeural-Male",
+        voice_rate=1.2,
 
     )
     start(task_id, params, stop_at="video")

@@ -1,5 +1,7 @@
 import os
 import random
+import aiohttp
+import asyncio
 from urllib.parse import urlencode
 
 import requests
@@ -40,11 +42,7 @@ def search_videos_pexels(
     video_orientation = aspect.name
     video_width, video_height = aspect.to_resolution()
     api_key = get_api_key("pexels_api_keys")
-    headers = {
-        "Authorization": api_key,
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) "
-                      "Chrome/58.0.3029.110 Safari/537.3"
-    }
+    headers = {"Authorization": api_key, "User-Agent": "Mozilla/5.0"}
     # Build URL
     params = {"query": search_term, "per_page": 20, "orientation": video_orientation}
     query_url = f"https://api.pexels.com/videos/search?{urlencode(params)}"
@@ -127,7 +125,7 @@ def search_videos_pixabay(
                 continue
             video_files = v["videos"]
             # loop through each url to determine the best quality
-            for video_type in video_files:
+            for video_type in dict(reversed(video_files.items())):
                 video = video_files[video_type]
                 w = int(video["width"])
                 h = int(video["height"])
@@ -145,7 +143,7 @@ def search_videos_pixabay(
     return []
 
 
-def save_video(video_url: str, save_dir: str = "") -> str:
+async def save_video(video_url: str, save_dir: str = "", retries: int = 3) -> str:
     if not save_dir:
         save_dir = utils.storage_dir("cache_videos")
 
@@ -162,37 +160,54 @@ def save_video(video_url: str, save_dir: str = "") -> str:
         logger.info(f"video already exists: {video_path}")
         return video_path
 
-    # if video does not exist, download it
-    with open(video_path, "wb") as f:
-        f.write(
-            requests.get(
-                video_url,
-                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, "
-                                       "like Gecko) Chrome/58.0.3029.110 Safari/537.3"},
-                proxies=config.proxy,
-                verify=False,
-                timeout=(60, 240)
-            ).content
-        )
+    # Download the video asynchronously
+    for attempt in range(retries):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                        video_url,
+                        headers={"User-Agent": "Mozilla/5.0"},
+                        proxy=config.proxy['http'],
+                        ssl=False,
+                        timeout=aiohttp.ClientTimeout(total=240)
+                ) as response:
+                    if response.status == 200:
+                        with open(video_path, 'wb') as f:
+                            while True:
+                                chunk = await response.content.read(1024)
+                                if not chunk:
+                                    break
+                                f.write(chunk)
+                    else:
+                        logger.error(f"Failed to download，error code: {response.status}")
+                        return ""
+        except aiohttp.ClientPayloadError as e:
+            logger.warning(f"Download interrupt，retry {attempt + 1}/{retries} times: {str(e)}")
+            await asyncio.sleep(0.2)  # Wait 1 second and try again
+            continue
+        except Exception as e:
+            logger.error(f"Failed to download: {str(e)}")
+            return ""
+        else:
+            break
+    else:
+        logger.error("Download failed after multiple retries")
+        return ""
 
+    # Verify video integrity
     if os.path.exists(video_path) and os.path.getsize(video_path) > 0:
         try:
-            clip = VideoFileClip(video_path)
-            duration = clip.duration
-            fps = clip.fps
-            clip.close()
-            if duration > 0 and fps > 0:
-                return video_path
+            with VideoFileClip(video_path) as clip:
+                if clip.duration > 0 and clip.fps > 0:
+                    return video_path
         except Exception as e:
-            try:
-                os.remove(video_path)
-            except Exception as e:
-                pass
-            logger.warning(f"invalid video file: {video_path} => {str(e)}")
+            os.remove(video_path)
+            logger.warning(f"Invalid video file: {video_path} => {str(e)}")
+
     return ""
 
 
-def download_videos(
+async def download_videos(
     task_id: str,
     search_terms: List[str],
     source: str = "pexels",
@@ -201,12 +216,8 @@ def download_videos(
     audio_duration: float = 0.0,
     max_clip_duration: int = 5,
 ) -> List[str]:
-    valid_video_items = []
     valid_video_urls = []
-    found_duration = 0.0
-    search_videos = search_videos_pexels
-    if source == "pixabay":
-        search_videos = search_videos_pixabay
+    search_videos = search_videos_pexels if source == "pexels" else search_videos_pixabay
 
     for search_term in search_terms:
         video_items = search_videos(
@@ -214,18 +225,11 @@ def download_videos(
             minimum_duration=max_clip_duration,
             video_aspect=video_aspect,
         )
-        logger.info(f"found {len(video_items)} videos for '{search_term}'")
+        logger.info(f"Found {len(video_items)} videos for '{search_term}'")
+        valid_video_urls.extend([item.url for item in video_items])
 
-        for item in video_items:
-            if item.url not in valid_video_urls:
-                valid_video_items.append(item)
-                valid_video_urls.append(item.url)
-                found_duration += item.duration
-
-    logger.info(
-        f"found total videos: {len(valid_video_items)}, required duration: {audio_duration} seconds, found duration: {found_duration} seconds"
-    )
-    video_paths = []
+    if video_contact_mode == "random":
+        random.shuffle(valid_video_urls)
 
     material_directory = config.app.get("material_directory", "").strip()
     if material_directory == "task":
@@ -233,33 +237,26 @@ def download_videos(
     elif material_directory and not os.path.isdir(material_directory):
         material_directory = ""
 
-    if video_contact_mode.value == VideoConcatMode.random.value:
-        random.shuffle(valid_video_items)
-
     total_duration = 0.0
-    for item in valid_video_items:
-        try:
-            logger.info(f"downloading video: {item.url}")
-            saved_video_path = save_video(
-                video_url=item.url, save_dir=material_directory
-            )
-            if saved_video_path:
-                logger.info(f"video saved: {saved_video_path}")
-                video_paths.append(saved_video_path)
-                seconds = min(max_clip_duration, item.duration)
-                total_duration += seconds
-                if total_duration > audio_duration:
-                    logger.info(
-                        f"total duration of downloaded videos: {total_duration} seconds, skip downloading more"
-                    )
-                    break
-        except Exception as e:
-            logger.error(f"failed to download video: {utils.to_json(item)} => {str(e)}")
-    logger.success(f"downloaded {len(video_paths)} videos")
-    return video_paths
+    result = []
+
+    # create tasks
+    tasks = [save_video(url, save_dir=material_directory) for url in valid_video_urls]
+    video_paths = await asyncio.gather(*tasks)  # Run all tasks concurrently
+    for video_path in video_paths:
+        if video_path:
+            result.append(video_path)
+            with VideoFileClip(video_path) as clip:
+                total_duration += min(max_clip_duration, clip.duration)
+            if total_duration >= audio_duration:
+                break
+
+    logger.success(f"Downloaded {len(result)} videos")
+    return result
 
 
 if __name__ == "__main__":
-    download_videos(
-        "test123", ["Money Exchange Medium"], audio_duration=100, source="pixabay"
-    )
+    asyncio.run(download_videos(
+        "test123", ["loan risks", "stock market borrowing", "legal promissory note",
+                    "financial responsibility", "investment caution"], audio_duration=10, source="pixabay"
+    ))
