@@ -1,15 +1,15 @@
 import math
+import random
 import asyncio
 import os.path
 import re
 from os import path
 
-from edge_tts import SubMaker
 from loguru import logger
 
 from app.config import config
 from app.models import const
-from app.models.schema import VideoConcatMode, VideoParams
+from app.models.schema import VideoConcatMode, VideoParams, MaterialInfo
 from app.services import llm, material, subtitle, video, voice
 from app.services import state as sm
 from app.utils import utils
@@ -213,7 +213,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     if type(params.video_concat_mode) is str:
         params.video_concat_mode = VideoConcatMode(params.video_concat_mode)
-        
+
     # 1. Generate script
     video_script = generate_script(task_id, params)
     if not video_script:
@@ -325,14 +325,42 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     return kwargs
 
 
-if __name__ == "__main__":
-    task_id = "task_id"
+def test_remote():
     params = VideoParams(
-        video_subject="金钱的作用",
-        video_script="最近几天股市非常火，已经有一些朋友开始借钱炒股了，提醒大家当朋友或亲人向你借钱炒股时，一定要保持谨慎，因为股市充满风险，投资失败的可能性很高，不仅可能导致金钱的损失，还可能影响彼此的关系。即使决定借钱，也务必签订借条，以明确双方的责任，保障自己的权益。借条不仅是法律保护的依据，也是彼此信任的体现，能够有效避免未来的纠纷和误解。因此，在涉及借款的情况下，不论对方有多亲近，都要采取必要的保护措施，以避免不必要的财务损失和人际冲突。",
-        video_terms="loan caution, stock market risk, borrow responsibly, loan agreement, protect finances",
-        voice_name="zh-CN-YunjianNeural-Male",
+        video_subject="描述借钱不还的窘境，推荐用户通过法律服务追回欠款",
+        video_script="借钱不还的情况往往让出借人陷入极大的困扰和无奈，既不愿破坏关系，又担心难以追回款项，造成财务压力。长期追讨欠款可能让人身心疲惫，甚至导致人际关系恶化。面对这种窘境，依靠法律服务是一种稳妥且有效的解决方式。通过法律途径，不仅可以凭借借条等证据保障自己的合法权益，还能避免不必要的纠纷和矛盾，使讨债过程更加规范和有力，最终帮助你及时追回欠款，减轻经济负担。",
+        video_terms="unpaid debt issue, financial stress, legal recovery, protect rights, debt collection assistance",
+        voice_name="zh-CN-YunyangNeural-Male",
         voice_rate=1.2,
-
+        video_count=1
     )
-    start(task_id, params, stop_at="video")
+    start(params.video_subject, params, stop_at="video")
+
+
+def test_local():
+    video_materials = []
+    with os.scandir("/Users/jinjianxun/code/llm/MoneyPrinterTurbo/storage/cache_videos") as entries:
+        files = [entry for entry in entries if
+                 entry.is_file() and (entry.name.endswith(".mp4") or entry.name.endswith(".png"))]
+        for _ in range(10):
+            # 随机选择一个元素
+            element = random.choice(files)
+            # 从数组中移除已经选择的元素
+            files.remove(element)
+            video_materials.append(MaterialInfo(url=element.path))
+
+    params = VideoParams(
+        video_source="local",
+        video_materials=video_materials,
+        video_subject="主动打借条更容易借到钱111",
+        video_script="主动打借条可以增强借款人对出借人的信任感，让对方觉得你是一个有责任心且值得信赖的人，从而更容易获得对方的支持。借条明确了借款的金额、期限和还款条件，这不仅保障了出借人的权益，还表明你对借款的认真态度。通过主动提出签署借条，你传达了对还款的承诺与尊重，减少了出借人的顾虑。这样既有助于建立互信，又提升了借款成功的可能性，最终使双方都感到安心和有保障。",
+        video_terms="build trust, responsible borrower, loan agreement benefits, enhance credibility, increase loan approval",
+        voice_name="zh-CN-YunyangNeural-Male",
+        voice_rate=1.2,
+        video_count=1
+    )
+    start(params.video_subject, params, stop_at="video")
+
+
+if __name__ == "__main__":
+    test_remote()

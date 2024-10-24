@@ -29,13 +29,13 @@ def get_bgm_file(bgm_type: str = "random", bgm_file: str = ""):
 
 
 def combine_videos(
-    combined_video_path: str,
-    video_paths: List[str],
-    audio_file: str,
-    video_aspect: VideoAspect = VideoAspect.portrait,
-    video_concat_mode: VideoConcatMode = VideoConcatMode.random,
-    max_clip_duration: int = 5,
-    threads: int = 2,
+        combined_video_path: str,
+        video_paths: List[str],
+        audio_file: str,
+        video_aspect: VideoAspect = VideoAspect.portrait,
+        video_concat_mode: VideoConcatMode = VideoConcatMode.random,
+        max_clip_duration: int = 5,
+        threads: int = 2,
 ) -> str:
     audio_clip = AudioFileClip(audio_file)
     audio_duration = audio_clip.duration
@@ -200,11 +200,11 @@ def wrap_text(text, max_width, font="Arial", fontsize=60):
 
 
 def generate_video(
-    video_path: str,
-    audio_path: str,
-    subtitle_path: str,
-    output_file: str,
-    params: VideoParams,
+        video_path: str,
+        audio_path: str,
+        subtitle_path: str,
+        output_file: str,
+        params: VideoParams,
 ):
     aspect = VideoAspect(params.video_aspect)
     video_width, video_height = aspect.to_resolution()
@@ -332,7 +332,7 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
             # t代表当前时间，clip.duration为视频总时长，这里是3秒。
             # 注意：1 表示100%的大小，所以1.2表示120%的大小
             zoom_clip = clip.resize(
-                lambda t: 1 + (clip_duration * 0.03) * (t / clip.duration)
+                lambda t: 1 + 0.2 * t / clip_duration
             )
 
             # 如果需要，可以创建一个包含缩放剪辑的复合视频剪辑
@@ -340,7 +340,7 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
             final_clip = CompositeVideoClip([zoom_clip])
 
             # 输出视频
-            video_file = f"{material.url}.mp4"
+            video_file = material.url.replace(ext, "mp4")
             final_clip.write_videofile(video_file, fps=30, logger=None)
             final_clip.close()
             del final_clip
@@ -351,9 +351,9 @@ def preprocess_video(materials: List[MaterialInfo], clip_duration=4):
 
 if __name__ == "__main__":
     m = MaterialInfo()
-    m.url = "/Users/harry/Downloads/IMG_2915.JPG"
+    m.url = "/Users/jinjianxun/电子借条.png"
     m.provider = "local"
-    materials = preprocess_video([m], clip_duration=4)
+    materials = preprocess_video([m], clip_duration=3)
     print(materials)
 
     # txt_en = "Here's your guide to travel hacks for budget-friendly adventures"
