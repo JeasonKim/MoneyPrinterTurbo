@@ -1,6 +1,7 @@
 import glob
 import random
 from typing import List
+from os import path
 
 from loguru import logger
 from moviepy.editor import *
@@ -139,7 +140,6 @@ def combine_videos(
     video_clip.close()
     logger.success("completed")
     return combined_video_path
-
 
 def wrap_text(text, max_width, font="Arial", fontsize=60):
     # 创建字体对象

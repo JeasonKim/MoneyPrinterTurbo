@@ -7,6 +7,7 @@ import ffmpeg
 import subprocess
 
 import requests
+from collections import defaultdict
 from typing import List
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
@@ -79,6 +80,7 @@ def search_videos_pexels(
                 if w == video_width and h == video_height:
                     item = MaterialInfo()
                     item.provider = "pexels"
+                    item.search_term = search_term
                     item.url = video["link"]
                     item.duration = duration
                     video_items.append(item)
@@ -135,6 +137,7 @@ def search_videos_pixabay(
                 if w >= video_width:
                     item = MaterialInfo()
                     item.provider = "pixabay"
+                    item.search_term = search_term
                     item.url = video["url"]
                     item.duration = duration
                     video_items.append(item)
@@ -172,7 +175,7 @@ async def save_video(video_url: str, save_dir: str = "", retries: int = 3) -> st
                             headers={"User-Agent": "Mozilla/5.0"},
                             proxy=config.proxy['http'],
                             ssl=False,
-                            timeout=aiohttp.ClientTimeout(total=5*60)
+                            timeout=aiohttp.ClientTimeout(total=5 * 60)
                     ) as response:
                         if response.status == 200:
                             video_size = response.content_length
@@ -184,7 +187,8 @@ async def save_video(video_url: str, save_dir: str = "", retries: int = 3) -> st
                                         break
                                     f.write(chunk)
                         else:
-                            logger.error(f"Failed to download videoId: {video_id}, url: {video_url}，error code: {response.status}")
+                            logger.error(
+                                f"Failed to download videoId: {video_id}, url: {video_url}，error code: {response.status}")
                             return ""
             except aiohttp.ClientPayloadError as e:
                 logger.warning(f"Download interrupt，retry {attempt + 1}/{retries} times: {str(e)}")
@@ -198,7 +202,8 @@ async def save_video(video_url: str, save_dir: str = "", retries: int = 3) -> st
             else:
                 break
         else:
-            logger.error("Failed to download videoId: {video_id}, url: {video_url} : Download failed after multiple retries")
+            logger.error(
+                "Failed to download videoId: {video_id}, url: {video_url} : Download failed after multiple retries")
             if os.path.exists(video_path):
                 os.remove(video_path)
             return ""
@@ -224,6 +229,7 @@ async def download_videos(
         max_clip_duration: int = 5,
 ) -> List[str]:
     valid_video_urls = []
+    valid_videos = []
     search_videos = search_videos_pexels if source == "pexels" else search_videos_pixabay
 
     for search_term in search_terms:
@@ -233,7 +239,10 @@ async def download_videos(
             video_aspect=video_aspect,
         )
         logger.info(f"Found {len(video_items)} videos for '{search_term}'")
-        valid_video_urls.extend([item.url for item in video_items])
+        valid_videos.extend(video_items)
+    # 从所用的视频素材中随机获取总时长为5倍音频时长的素材
+    selected_materials = select_random_materials(valid_videos, audio_duration * 10)
+    valid_video_urls.extend([item.url for item in selected_materials])
 
     if video_contact_mode == "random":
         random.shuffle(valid_video_urls)
@@ -248,8 +257,8 @@ async def download_videos(
     result = []
 
     # create tasks
-    tasks = [save_video(url, save_dir=material_directory) for url in valid_video_urls]
-    video_paths = await asyncio.gather(*tasks)  # Run all tasks concurrently
+    save_video_tasks = [save_video(url, save_dir=material_directory) for url in valid_video_urls]
+    video_paths = await asyncio.gather(*save_video_tasks)  # Run all tasks concurrently
     for video_path in video_paths:
         if video_path:
             result.append(video_path)
@@ -262,6 +271,31 @@ async def download_videos(
 
     logger.success(f"Downloaded {len(result)} videos")
     return result
+
+
+def select_random_materials(materials: List[MaterialInfo], duration_limit: int) -> List[MaterialInfo]:
+    # Step 1: 将素材按 search_term 分组
+    grouped_by_term = defaultdict(list)
+    for material in materials:
+        grouped_by_term[material.search_term].append(material)
+
+    # Step 2: 初始化结果列表
+    selected_materials = []
+    total_duration = 0
+
+    # Step 3: 循环选择素材
+    # 遍历每个 search_term 组，从中随机选择一个素材
+    while total_duration < duration_limit:
+        for term, group in grouped_by_term.items():
+            if not group:  # 如果组为空，跳过
+                continue
+            material = random.choice(group)  # 从组中随机选择
+            selected_materials.append(material)
+            group.remove(material)  # 从组中移除已选择的素材
+            total_duration += material.duration
+            if total_duration >= duration_limit:
+                break;
+    return selected_materials
 
 
 def check_video_integrity(file_path: str, video_size: int) -> bool:
@@ -298,5 +332,5 @@ if __name__ == "__main__":
     # asyncio.run(save_video("https://videos.pexels.com/video-files/13433115/13433115-hd_1080_1920_24fps.mp4"))
     asyncio.run(download_videos(
         "test123", ["loan risks", "stock market borrowing", "legal promissory note",
-                    "financial responsibility", "investment caution"], audio_duration=10, source="pixabay"
+                    "financial responsibility", "investment caution"], audio_duration=10, source="pexels"
     ))

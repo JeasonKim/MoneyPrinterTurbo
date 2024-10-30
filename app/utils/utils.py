@@ -120,6 +120,35 @@ def public_dir(sub_dir: str = ""):
     return d
 
 
+def task_script_file(task_id: str):
+    return os.path.join(task_dir(task_id), "script.json")
+
+
+def task_audio_file(task_id: str):
+    return os.path.join(task_dir(task_id), "audio.mp3")
+
+def task_pre_audio_file(task_id: str):
+    return os.path.join(task_dir(task_id), "pre_audio.mp3")
+
+def task_post_audio_file(task_id: str):
+    return os.path.join(task_dir(task_id), "post_audio.mp3")
+
+def task_ad_audio_file(task_id: str):
+    return os.path.join(task_dir(task_id), "ad_audio.mp3")
+
+def task_pre_subtitle_file(task_id: str):
+    return os.path.join(task_dir(task_id), "pre_audio.srt")
+
+def task_post_subtitle_file(task_id: str):
+    return os.path.join(task_dir(task_id), "post_audio.srt")
+
+def task_ad_subtitle_file(task_id: str):
+    return os.path.join(task_dir(task_id), "ad.srt")
+
+def task_subtitle_file(task_id: str):
+    return os.path.join(task_dir(task_id), "subtitle.srt")
+
+
 def run_in_background(func, *args, **kwargs):
     def run():
         try:

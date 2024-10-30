@@ -39,7 +39,8 @@ class _Config:
 
 @pydantic.dataclasses.dataclass(config=_Config)
 class MaterialInfo:
-    provider: str = "pexels"
+    provider: str = ""
+    search_term: str = ""
     url: str = ""
     duration: int = 0
 
@@ -98,37 +99,41 @@ class VideoParams(BaseModel):
     """
 
     video_subject: str
-    video_script: str = ""  # 用于生成视频的脚本
+    video_script: str = ""  # 视频脚本
+    paragraph_number: Optional[int] = 1  # 视频脚本的段落数
     video_terms: Optional[str | list] = None  # 用于生成视频的关键词
-    video_aspect: Optional[VideoAspect] = VideoAspect.portrait.value
-    video_concat_mode: Optional[VideoConcatMode] = VideoConcatMode.random.value
-    video_clip_duration: Optional[int] = 5
-    video_count: Optional[int] = 1
+    video_aspect: Optional[VideoAspect] = VideoAspect.portrait.value  # 视频宽高比
+    video_concat_mode: Optional[VideoConcatMode] = VideoConcatMode.random.value  # 视频拼接模式
+    video_clip_duration: Optional[int] = 5  # 视频时长
+    video_count: Optional[int] = 1  # 视频数量
 
-    video_source: Optional[str] = "pexels"
+    video_source: Optional[str] = "pexels"  # 视频素材源
     video_materials: Optional[List[MaterialInfo]] = None  # 用于生成视频的素材
 
-    video_language: Optional[str] = ""  # auto detect
+    video_language: Optional[str] = ""  # 视频语言 auto detect
 
-    voice_name: Optional[str] = ""
-    voice_volume: Optional[float] = 1.0
-    voice_rate: Optional[float] = 1.0
-    bgm_type: Optional[str] = "random"
-    bgm_file: Optional[str] = ""
-    bgm_volume: Optional[float] = 0.2
+    voice_name: Optional[str] = ""  # 音频名称
+    voice_volume: Optional[float] = 1.0  # 音量
+    voice_rate: Optional[float] = 1.0  # 语速
+    bgm_type: Optional[str] = "random"  # 背景音乐类型
+    bgm_file: Optional[str] = ""  # 背景音乐文件
+    bgm_volume: Optional[float] = 0.2  # 背景音乐音量
 
-    subtitle_enabled: Optional[bool] = True
-    subtitle_position: Optional[str] = "bottom"  # top, bottom, center
-    custom_position: float = 70.0
-    font_name: Optional[str] = "STHeitiMedium.ttc"
-    text_fore_color: Optional[str] = "#FFFFFF"
-    text_background_color: Optional[str] = "transparent"
+    subtitle_enabled: Optional[bool] = True  # 开启字幕
+    subtitle_position: Optional[str] = "bottom"  # 字幕位置 top, bottom, center
+    custom_position: float = 70.0  # 字幕位置离顶部的百分比
+    font_name: Optional[str] = "STHeitiMedium.ttc"  # 字幕字体
+    text_fore_color: Optional[str] = "#FFFFFF"  # 字幕前景色
+    text_background_color: Optional[str] = "transparent"  # 字幕背景色
 
-    font_size: int = 60
-    stroke_color: Optional[str] = "#000000"
-    stroke_width: float = 1.5
-    n_threads: Optional[int] = 8
-    paragraph_number: Optional[int] = 1
+    font_size: int = 60  # 字幕字体大小
+    stroke_color: Optional[str] = "#000000"  # 字幕描边颜色
+    stroke_width: float = 1.5  # 字幕描边粗细
+    n_threads: Optional[int] = 8  # 处理线程数
+
+    ad_enabled: Optional[bool] = False  # 开启字幕
+    ad_url: Optional[str] = ""  # 广告材料
+    ad_script: Optional[str] = ""  # 广告脚本
 
 
 class SubtitleRequest(BaseModel):
@@ -191,6 +196,18 @@ class VideoTermsParams:
         "春天的花海，如诗如画般展现在眼前。万物复苏的季节里，大地披上了一袭绚丽多彩的盛装。金黄的迎春、粉嫩的樱花、洁白的梨花、艳丽的郁金香……"
     )
     amount: Optional[int] = 5
+
+
+class Task(BaseModel):
+    script: Optional[str] = ""
+    search_terms: Optional[List[str]] = []
+    ad_duration: Optional[float] = 0.0
+    ad_material_info: Optional[MaterialInfo] = None
+    pre_ad_duration: Optional[float] = 0.0
+    post_ad_duration: Optional[float] = 0.0
+    total_duration: Optional[float] = 0.0
+    material_urls:Optional[List[str]] = []
+    params: VideoParams = None
 
 
 class BaseResponse(BaseModel):
