@@ -24,6 +24,7 @@ def load_config():
 
     try:
         _config_ = toml.load(config_file)
+        os.environ["OPENAI_API_KEY"] = _config_.get("app").get("openai_api_key", "")
     except Exception as e:
         logger.warning(f"load config failed: {str(e)}, try to load as utf-8-sig")
         with open(config_file, mode="r", encoding="utf-8-sig") as fp:

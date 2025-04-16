@@ -2,13 +2,13 @@ import json
 import logging
 import re
 from typing import List
-
+from app.config import config
 import g4f
 from loguru import logger
 from openai import AzureOpenAI, OpenAI
 from openai.types.chat import ChatCompletion
 
-from app.config import config
+
 
 _max_retries = 5
 

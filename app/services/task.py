@@ -76,7 +76,7 @@ def generate_audio(task_id, params, video_script):
     logger.info("\n\n## generating audio")
     audio_file = path.join(utils.task_dir(task_id), "audio.mp3")
     sub_maker = voice.tts(text=video_script, voice_name=voice.parse_voice_name(params.voice_name),
-                          voice_rate=params.voice_rate, voice_file=audio_file, proxy=config.proxy['http'])
+                          voice_rate=params.voice_rate, voice_file=audio_file)
     if sub_maker is None:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
         logger.error(
@@ -329,10 +329,10 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
 def test_remote():
     params = VideoParams(
-        video_subject="闺蜜要借我的新相机，借不借啊？",
-        video_script="刚买的索尼 A7M4 还没捂热，闺蜜突然说要借去拍毕业旅行的照片……她是我十年死党，人超好，但平时真的挺丢三落四的，比如老是丢伞，之前还把我的充电宝弄丢了。 我真的纠结了很久。一方面，确实一起玩了这么多年，拒绝显得我太小气；但另一方面，相机我才刚买一个月，一万多块的设备要是摔了怎么办？丢了怎么办？提维修费会伤感情，不提我自己又心疼。 昨天下午她跟我提了这件事，我一直没回她（我们不在一个学校，所以是纯线上沟通）。 这时我的一个室友建议我，可以和闺蜜签一份租赁合同，把租相机的注意事项、如有损坏的赔偿条款都写清楚。 别怕签合同会伤感情，如果之后真出问题，吵架才更伤感情。 在“蓝色软件”里搜索“e签宝租赁合同”，有专业的租机合同模板，线上发起签署都能搞定。 赶快试试吧！",
-        video_terms="camera lending dilemma, protect valuables, rental agreement tips, avoid friendship conflict, e-sign contract",
-        voice_name="zh-CN-XiaoxiaoNeural",
+        video_subject="感觉请的阿姨手脚有点不干净，我想提前辞退她需要付违约金吗？",
+        video_script="感觉请的阿姨手脚有点不干净，我想提前辞退她需要付违约金吗？我请的阿姨月薪八千，负责带孩子和做饭，但上户才六天我就有点想辞退她了。先是我买了一盒车厘子，本来是给孩子吃的，也没说不能给阿姨吃，结果我上班时看监控，看到阿姨一个人坐着看电视把车厘子全吃了，孩子一颗都没吃到。然后昨天晚上我把金项链放在卫生间洗手台上，第二天早上起来就不见了。我问阿姨，她说没看见，但卫生间没装监控，真不好查。我现在很纠结，不知道该怎么办。辞退又说不出口。建议大家找家政服务时，最好签署服务合同，把双方责任和权利都明确规定好。比如服务方有偷窃行为，需求方有权利解约。在蓝色软件里搜“e签宝服务合同”，可以找到专业的家政服务合同模板，线上签署也很方便，推荐你试试！",
+        video_terms="Housekeeper, Service contract",
+        voice_name="zh-CN-XiaoyiNeural",
         bgm_enabled=False,
         voice_rate=1.3,
         video_count=1

@@ -52,7 +52,7 @@ def combine_videos(
         audio_file: str,
         video_aspect: VideoAspect = VideoAspect.portrait,
         video_concat_mode: VideoConcatMode = VideoConcatMode.random,
-video_transition_mode: VideoTransitionMode = None,
+        video_transition_mode: VideoTransitionMode = None,
         max_clip_duration: int = 5,
         threads: int = 2,
 ) -> str:
@@ -139,7 +139,7 @@ video_transition_mode: VideoTransitionMode = None,
 
             shuffle_side = random.choice(["left", "right", "top", "bottom"])
             logger.info(f"Using transition mode: {video_transition_mode}")
-            if video_transition_mode.value == VideoTransitionMode.none.value:
+            if video_transition_mode is None or video_transition_mode.value == VideoTransitionMode.none.value:
                 clip = clip
             elif video_transition_mode.value == VideoTransitionMode.fade_in.value:
                 clip = video_effects.fadein_transition(clip, 1)
