@@ -155,13 +155,14 @@ def get_video_materials(task_id, params, video_terms, audio_duration):
 
 
 def generate_final_videos(
-        task_id, params, downloaded_videos, audio_file, subtitle_path
+    task_id, params, downloaded_videos, audio_file, subtitle_path
 ):
     final_video_paths = []
     combined_video_paths = []
     video_concat_mode = (
         params.video_concat_mode if params.video_count == 1 else VideoConcatMode.random
     )
+    video_transition_mode = params.video_transition_mode
 
     _progress = 50
     for i in range(params.video_count):
@@ -176,6 +177,7 @@ def generate_final_videos(
             audio_file=audio_file,
             video_aspect=params.video_aspect,
             video_concat_mode=video_concat_mode,
+            video_transition_mode=video_transition_mode,
             max_clip_duration=params.video_clip_duration,
             threads=params.n_threads,
         )
@@ -212,7 +214,7 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
     # 1. Generate script
     video_script = generate_script(task_id, params)
-    if not video_script:
+    if not video_script or "Error: " in video_script:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
         return
 
@@ -243,7 +245,9 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
     sm.state.update_task(task_id, state=const.TASK_STATE_PROCESSING, progress=20)
 
     # 3. Generate audio
-    audio_file, audio_duration, sub_maker = generate_audio(task_id, params, video_script)
+    audio_file, audio_duration, sub_maker = generate_audio(
+        task_id, params, video_script
+    )
     if not audio_file:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
         return
@@ -260,7 +264,9 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
         return {"audio_file": audio_file, "audio_duration": audio_duration}
 
     # 4. Generate subtitle
-    subtitle_path = generate_subtitle(task_id, params, video_script, sub_maker, audio_file)
+    subtitle_path = generate_subtitle(
+        task_id, params, video_script, sub_maker, audio_file
+    )
 
     if stop_at == "subtitle":
         sm.state.update_task(

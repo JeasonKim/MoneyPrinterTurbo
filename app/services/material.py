@@ -1,5 +1,6 @@
 import os
 import random
+from typing import List
 import aiohttp
 import asyncio
 from urllib.parse import urlencode
@@ -7,12 +8,11 @@ import ffmpeg
 import subprocess
 
 import requests
-from typing import List
 from loguru import logger
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
 from app.config import config
-from app.models.schema import VideoAspect, VideoConcatMode, MaterialInfo
+from app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode
 from app.utils import utils
 
 requested_count = 0
@@ -45,7 +45,10 @@ def search_videos_pexels(
     video_orientation = aspect.name
     video_width, video_height = aspect.to_resolution()
     api_key = get_api_key("pexels_api_keys")
-    headers = {"Authorization": api_key, "User-Agent": "Mozilla/5.0"}
+    headers = {
+        "Authorization": api_key,
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+    }
     # Build URL
     params = {"query": search_term, "per_page": 20, "orientation": video_orientation}
     query_url = f"https://api.pexels.com/videos/search?{urlencode(params)}"
@@ -131,7 +134,7 @@ def search_videos_pixabay(
             for video_type in dict(reversed(video_files.items())):
                 video = video_files[video_type]
                 w = int(video["width"])
-                h = int(video["height"])
+                # h = int(video["height"])
                 if w >= video_width:
                     item = MaterialInfo()
                     item.provider = "pixabay"

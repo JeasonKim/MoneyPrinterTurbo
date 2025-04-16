@@ -72,10 +72,6 @@
 - [ ] 支持更多的语音合成服务商，比如 OpenAI TTS
 - [ ] 自动上传到YouTube平台
 
-## 交流讨论 💬
-
-<img src="docs/wechat-group.jpg" width="250">
-
 ## 视频演示 📺
 
 ### 竖屏 9:16
@@ -169,6 +165,8 @@ cd MoneyPrinterTurbo
 docker-compose up
 ```
 
+> 注意：最新版的docker安装时会自动以插件的形式安装docker compose，启动命令调整为docker compose up
+
 #### ② 访问Web界面
 
 打开浏览器，访问 http://0.0.0.0:8501
@@ -191,7 +189,7 @@ docker-compose up
 ```shell
 git clone https://github.com/harry0703/MoneyPrinterTurbo.git
 cd MoneyPrinterTurbo
-conda create -n MoneyPrinterTurbo python=3.10
+conda create -n MoneyPrinterTurbo python=3.11
 conda activate MoneyPrinterTurbo
 pip install -r requirements.txt
 ```

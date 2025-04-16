@@ -1,5 +1,10 @@
 import os
+import platform
 import sys
+from uuid import uuid4
+
+import streamlit as st
+from loguru import logger
 
 # Add the root directory of the project to the system path to allow importing modules from the project
 root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -9,12 +14,18 @@ if root_dir not in sys.path:
     print(sys.path)
     print("")
 
-import os
-import platform
-from uuid import uuid4
-
-import streamlit as st
-from loguru import logger
+from app.config import config
+from app.models.const import FILE_TYPE_IMAGES, FILE_TYPE_VIDEOS
+from app.models.schema import (
+    MaterialInfo,
+    VideoAspect,
+    VideoConcatMode,
+    VideoParams,
+    VideoTransitionMode,
+)
+from app.services import llm, voice
+from app.services import task as tm
+from app.utils import utils
 
 st.set_page_config(
     page_title="MoneyPrinterTurbo",
@@ -30,12 +41,6 @@ st.set_page_config(
     },
 )
 
-from app.config import config
-from app.models.const import FILE_TYPE_IMAGES, FILE_TYPE_VIDEOS
-from app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode, VideoParams
-from app.services import llm, voice
-from app.services import task as tm
-from app.utils import utils
 
 hide_streamlit_style = """
 <style>#root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}</style>
@@ -450,8 +455,12 @@ with left_panel:
         selected_index = st.selectbox(
             tr("Script Language"),
             index=0,
-            options=range(len(video_languages)),  # 使用索引作为内部选项值
-            format_func=lambda x: video_languages[x][0],  # 显示给用户的是标签
+            options=range(
+                len(video_languages)
+            ),  # Use the index as the internal option value
+            format_func=lambda x: video_languages[x][
+                0
+            ],  # The label is displayed to the user
         )
         params.video_language = video_languages[selected_index][1]
 
@@ -463,9 +472,13 @@ with left_panel:
                     video_subject=params.video_subject, language=params.video_language
                 )
                 terms = llm.generate_terms(params.video_subject, script)
-                st.session_state["video_script"] = script
-                st.session_state["video_terms"] = ", ".join(terms)
-
+                if "Error: " in script:
+                    st.error(tr(script))
+                elif "Error: " in terms:
+                    st.error(tr(terms))
+                else:
+                    st.session_state["video_script"] = script
+                    st.session_state["video_terms"] = ", ".join(terms)
         params.video_script = st.text_area(
             tr("Video Script"), value=st.session_state["video_script"], height=280
         )
@@ -476,10 +489,13 @@ with left_panel:
 
             with st.spinner(tr("Generating Video Keywords")):
                 terms = llm.generate_terms(params.video_subject, params.video_script)
-                st.session_state["video_terms"] = ", ".join(terms)
+                if "Error: " in terms:
+                    st.error(tr(terms))
+                else:
+                    st.session_state["video_terms"] = ", ".join(terms)
 
         params.video_terms = st.text_area(
-            tr("Video Keywords"), value=st.session_state["video_terms"], height=50
+            tr("Video Keywords"), value=st.session_state["video_terms"]
         )
 
 with middle_panel:
@@ -523,11 +539,34 @@ with middle_panel:
         selected_index = st.selectbox(
             tr("Video Concat Mode"),
             index=1,
-            options=range(len(video_concat_modes)),  # 使用索引作为内部选项值
-            format_func=lambda x: video_concat_modes[x][0],  # 显示给用户的是标签
+            options=range(
+                len(video_concat_modes)
+            ),  # Use the index as the internal option value
+            format_func=lambda x: video_concat_modes[x][
+                0
+            ],  # The label is displayed to the user
         )
         params.video_concat_mode = VideoConcatMode(
             video_concat_modes[selected_index][1]
+        )
+
+        # 视频转场模式
+        video_transition_modes = [
+            (tr("None"), VideoTransitionMode.none.value),
+            (tr("Shuffle"), VideoTransitionMode.shuffle.value),
+            (tr("FadeIn"), VideoTransitionMode.fade_in.value),
+            (tr("FadeOut"), VideoTransitionMode.fade_out.value),
+            (tr("SlideIn"), VideoTransitionMode.slide_in.value),
+            (tr("SlideOut"), VideoTransitionMode.slide_out.value),
+        ]
+        selected_index = st.selectbox(
+            tr("Video Transition Mode"),
+            options=range(len(video_transition_modes)),
+            format_func=lambda x: video_transition_modes[x][0],
+            index=0,
+        )
+        params.video_transition_mode = VideoTransitionMode(
+            video_transition_modes[selected_index][1]
         )
 
         video_aspect_ratios = [
@@ -536,8 +575,12 @@ with middle_panel:
         ]
         selected_index = st.selectbox(
             tr("Video Ratio"),
-            options=range(len(video_aspect_ratios)),  # 使用索引作为内部选项值
-            format_func=lambda x: video_aspect_ratios[x][0],  # 显示给用户的是标签
+            options=range(
+                len(video_aspect_ratios)
+            ),  # Use the index as the internal option value
+            format_func=lambda x: video_aspect_ratios[x][
+                0
+            ],  # The label is displayed to the user
         )
         params.video_aspect = VideoAspect(video_aspect_ratios[selected_index][1])
 
@@ -641,13 +684,17 @@ with middle_panel:
         selected_index = st.selectbox(
             tr("Background Music"),
             index=1,
-            options=range(len(bgm_options)),  # 使用索引作为内部选项值
-            format_func=lambda x: bgm_options[x][0],  # 显示给用户的是标签
+            options=range(
+                len(bgm_options)
+            ),  # Use the index as the internal option value
+            format_func=lambda x: bgm_options[x][
+                0
+            ],  # The label is displayed to the user
         )
-        # 获取选择的背景音乐类型
+        # Get the selected background music type
         params.bgm_type = bgm_options[selected_index][1]
 
-        # 根据选择显示或隐藏组件
+        # Show or hide components based on the selection
         if params.bgm_type == "custom":
             custom_bgm_file = st.text_input(tr("Custom Background Music File"))
             if custom_bgm_file and os.path.exists(custom_bgm_file):
@@ -723,11 +770,6 @@ if start_button:
     task_id = str(uuid4())
     if not params.video_subject and not params.video_script:
         st.error(tr("Video Script and Subject Cannot Both Be Empty"))
-        scroll_to_bottom()
-        st.stop()
-
-    if llm_provider != "g4f" and not config.app.get(f"{llm_provider}_api_key", ""):
-        st.error(tr("Please Enter the LLM API Key"))
         scroll_to_bottom()
         st.stop()
 
