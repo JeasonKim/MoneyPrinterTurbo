@@ -277,16 +277,17 @@ def generate_video(
             text_clips.append(clip)
         video_clip = CompositeVideoClip([video_clip, *text_clips])
 
-    bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
-    if bgm_file:
-        try:
-            bgm_clip = (
-                AudioFileClip(bgm_file).volumex(params.bgm_volume).audio_fadeout(3)
-            )
-            bgm_clip = afx.audio_loop(bgm_clip, duration=video_clip.duration)
-            audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
-        except Exception as e:
-            logger.error(f"failed to add bgm: {str(e)}")
+    if params.bgm_enabled:
+        bgm_file = get_bgm_file(bgm_type=params.bgm_type, bgm_file=params.bgm_file)
+        if bgm_file:
+            try:
+                bgm_clip = (
+                    AudioFileClip(bgm_file).volumex(params.bgm_volume).audio_fadeout(3)
+                )
+                bgm_clip = afx.audio_loop(bgm_clip, duration=video_clip.duration)
+                audio_clip = CompositeAudioClip([audio_clip, bgm_clip])
+            except Exception as e:
+                logger.error(f"failed to add bgm: {str(e)}")
 
     video_clip = video_clip.set_audio(audio_clip)
     video_clip.write_videofile(

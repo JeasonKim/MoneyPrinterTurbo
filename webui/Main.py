@@ -596,21 +596,13 @@ with middle_panel:
             with st.spinner(tr("Synthesizing Voice")):
                 temp_dir = utils.storage_dir("temp", create=True)
                 audio_file = os.path.join(temp_dir, f"tmp-voice-{str(uuid4())}.mp3")
-                sub_maker = voice.tts(
-                    text=play_content,
-                    voice_name=voice_name,
-                    voice_rate=params.voice_rate,
-                    voice_file=audio_file,
-                )
+                sub_maker = voice.tts(text=play_content, voice_name=voice_name, voice_rate=params.voice_rate,
+                                      voice_file=audio_file, proxy=config.proxy['http'])
                 # if the voice file generation failed, try again with a default content.
                 if not sub_maker:
                     play_content = "This is a example voice. if you hear this, the voice synthesis failed with the original content."
-                    sub_maker = voice.tts(
-                        text=play_content,
-                        voice_name=voice_name,
-                        voice_rate=params.voice_rate,
-                        voice_file=audio_file,
-                    )
+                    sub_maker = voice.tts(text=play_content, voice_name=voice_name, voice_rate=params.voice_rate,
+                                          voice_file=audio_file, proxy=config.proxy['http'])
 
                 if sub_maker and os.path.exists(audio_file):
                     st.audio(audio_file, format="audio/mp3")

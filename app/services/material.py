@@ -172,7 +172,7 @@ async def save_video(video_url: str, save_dir: str = "", retries: int = 3) -> st
                             headers={"User-Agent": "Mozilla/5.0"},
                             proxy=config.proxy['http'],
                             ssl=False,
-                            timeout=aiohttp.ClientTimeout(total=5*60)
+                            timeout=aiohttp.ClientTimeout(total=10*60)
                     ) as response:
                         if response.status == 200:
                             video_size = response.content_length

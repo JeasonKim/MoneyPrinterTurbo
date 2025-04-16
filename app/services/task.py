@@ -75,12 +75,8 @@ def save_script_data(task_id, video_script, video_terms, params):
 def generate_audio(task_id, params, video_script):
     logger.info("\n\n## generating audio")
     audio_file = path.join(utils.task_dir(task_id), "audio.mp3")
-    sub_maker = voice.tts(
-        text=video_script,
-        voice_name=voice.parse_voice_name(params.voice_name),
-        voice_rate=params.voice_rate,
-        voice_file=audio_file,
-    )
+    sub_maker = voice.tts(text=video_script, voice_name=voice.parse_voice_name(params.voice_name),
+                          voice_rate=params.voice_rate, voice_file=audio_file, proxy=config.proxy['http'])
     if sub_maker is None:
         sm.state.update_task(task_id, state=const.TASK_STATE_FAILED)
         logger.error(
@@ -327,11 +323,12 @@ def start(task_id, params: VideoParams, stop_at: str = "video"):
 
 def test_remote():
     params = VideoParams(
-        video_subject="描述借钱不还的窘境，推荐用户通过法律服务追回欠款",
-        video_script="借钱不还的情况往往让出借人陷入极大的困扰和无奈，既不愿破坏关系，又担心难以追回款项，造成财务压力。长期追讨欠款可能让人身心疲惫，甚至导致人际关系恶化。面对这种窘境，依靠法律服务是一种稳妥且有效的解决方式。通过法律途径，不仅可以凭借借条等证据保障自己的合法权益，还能避免不必要的纠纷和矛盾，使讨债过程更加规范和有力，最终帮助你及时追回欠款，减轻经济负担。",
-        video_terms="unpaid debt issue, financial stress, legal recovery, protect rights, debt collection assistance",
-        voice_name="zh-CN-YunyangNeural-Male",
-        voice_rate=1.2,
+        video_subject="闺蜜要借我的新相机，借不借啊？",
+        video_script="刚买的索尼 A7M4 还没捂热，闺蜜突然说要借去拍毕业旅行的照片……她是我十年死党，人超好，但平时真的挺丢三落四的，比如老是丢伞，之前还把我的充电宝弄丢了。 我真的纠结了很久。一方面，确实一起玩了这么多年，拒绝显得我太小气；但另一方面，相机我才刚买一个月，一万多块的设备要是摔了怎么办？丢了怎么办？提维修费会伤感情，不提我自己又心疼。 昨天下午她跟我提了这件事，我一直没回她（我们不在一个学校，所以是纯线上沟通）。 这时我的一个室友建议我，可以和闺蜜签一份租赁合同，把租相机的注意事项、如有损坏的赔偿条款都写清楚。 别怕签合同会伤感情，如果之后真出问题，吵架才更伤感情。 在“蓝色软件”里搜索“e签宝租赁合同”，有专业的租机合同模板，线上发起签署都能搞定。 赶快试试吧！",
+        video_terms="camera lending dilemma, protect valuables, rental agreement tips, avoid friendship conflict, e-sign contract",
+        voice_name="zh-CN-XiaoxiaoNeural",
+        bgm_enabled=False,
+        voice_rate=1.3,
         video_count=1
     )
     start(params.video_subject, params, stop_at="video")
@@ -339,7 +336,7 @@ def test_remote():
 
 def test_local():
     video_materials = []
-    with os.scandir("/Users/jinjianxun/code/llm/MoneyPrinterTurbo/storage/cache_videos") as entries:
+    with os.scandir("/Users/jinjianxun/短视频素材/美女") as entries:
         files = [entry for entry in entries if
                  entry.is_file() and (entry.name.endswith(".mp4") or entry.name.endswith(".png"))]
         for _ in range(10):
@@ -352,11 +349,11 @@ def test_local():
     params = VideoParams(
         video_source="local",
         video_materials=video_materials,
-        video_subject="主动打借条更容易借到钱111",
-        video_script="主动打借条可以增强借款人对出借人的信任感，让对方觉得你是一个有责任心且值得信赖的人，从而更容易获得对方的支持。借条明确了借款的金额、期限和还款条件，这不仅保障了出借人的权益，还表明你对借款的认真态度。通过主动提出签署借条，你传达了对还款的承诺与尊重，减少了出借人的顾虑。这样既有助于建立互信，又提升了借款成功的可能性，最终使双方都感到安心和有保障。",
-        video_terms="build trust, responsible borrower, loan agreement benefits, enhance credibility, increase loan approval",
-        voice_name="zh-CN-YunyangNeural-Male",
-        voice_rate=1.2,
+        video_subject="闺蜜要借我的新相机，借不借啊？",
+        video_script="刚买的索尼 A7M4 还没捂热，闺蜜突然说要借去拍毕业旅行的照片……她是我十年死党，人超好，但平时真的挺丢三落四的，比如老是丢伞，之前还把我的充电宝弄丢了。 我真的纠结了很久。一方面，确实一起玩了这么多年，拒绝显得我太小气；但另一方面，相机我才刚买一个月，一万多块的设备要是摔了怎么办？丢了怎么办？提维修费会伤感情，不提我自己又心疼。 昨天下午她跟我提了这件事，我一直没回她（我们不在一个学校，所以是纯线上沟通）。 这时我的一个室友建议我，可以和闺蜜签一份租赁合同，把租相机的注意事项、如有损坏的赔偿条款都写清楚。 别怕签合同会伤感情，如果之后真出问题，吵架才更伤感情。 在“蓝色软件”里搜索“e签宝租赁合同”，有专业的租机合同模板，线上发起签署都能搞定。 赶快试试吧！",
+        video_terms="camera lending dilemma, protect valuables, rental agreement tips, avoid friendship conflict, e-sign contract",
+        voice_name="zh-CN-YunjianNeural-Male",
+        voice_rate=1.3,
         video_count=1
     )
     start(params.video_subject, params, stop_at="video")
