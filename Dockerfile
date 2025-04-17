@@ -10,7 +10,8 @@ RUN chmod 777 /MoneyPrinterTurbo
 ENV PYTHONPATH="/MoneyPrinterTurbo"
 
 # Install system dependencies
-RUN apt-get update && apt-get install -y \
+RUN sed -i 's|http://deb.debian.org|http://mirrors.aliyun.com|g' /etc/apt/sources.list && \
+    apt-get update && apt-get install -y \
     git \
     imagemagick \
     ffmpeg \
@@ -23,7 +24,8 @@ RUN sed -i '/<policy domain="path" rights="none" pattern="@\*"/d' /etc/ImageMagi
 COPY requirements.txt ./
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Now copy the rest of the codebase into the image
 COPY . .

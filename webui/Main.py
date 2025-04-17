@@ -640,12 +640,12 @@ with middle_panel:
                 temp_dir = utils.storage_dir("temp", create=True)
                 audio_file = os.path.join(temp_dir, f"tmp-voice-{str(uuid4())}.mp3")
                 sub_maker = voice.tts(text=play_content, voice_name=voice_name, voice_rate=params.voice_rate,
-                                      voice_file=audio_file, proxy=config.proxy['http'])
+                                      voice_file=audio_file)
                 # if the voice file generation failed, try again with a default content.
                 if not sub_maker:
                     play_content = "This is a example voice. if you hear this, the voice synthesis failed with the original content."
                     sub_maker = voice.tts(text=play_content, voice_name=voice_name, voice_rate=params.voice_rate,
-                                          voice_file=audio_file, proxy=config.proxy['http'])
+                                          voice_file=audio_file)
 
                 if sub_maker and os.path.exists(audio_file):
                     st.audio(audio_file, format="audio/mp3")
@@ -767,7 +767,8 @@ with right_panel:
 start_button = st.button(tr("Generate Video"), use_container_width=True, type="primary")
 if start_button:
     config.save_config()
-    task_id = str(uuid4())
+    
+    task_id = params.video_subject if params.video_subject else str(uuid4())
     if not params.video_subject and not params.video_script:
         st.error(tr("Video Script and Subject Cannot Both Be Empty"))
         scroll_to_bottom()
