@@ -16,7 +16,6 @@ from app.models.schema import MaterialInfo, VideoAspect, VideoConcatMode
 from app.utils import utils
 
 requested_count = 0
-download_concurreny_num = asyncio.Semaphore(15)
 
 
 def get_api_key(cfg_key: str):
@@ -166,6 +165,7 @@ async def save_video(video_url: str, save_dir: str = "", retries: int = 3) -> st
         logger.info(f"video already exists: {video_path}")
         return video_path
     # Download the video asynchronously
+    download_concurreny_num = asyncio.Semaphore(15)
     async with download_concurreny_num:
         for attempt in range(retries):
             try:

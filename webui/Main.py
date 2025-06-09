@@ -31,14 +31,14 @@ st.set_page_config(
     page_title="MoneyPrinterTurbo",
     page_icon="🤖",
     layout="wide",
-    initial_sidebar_state="auto",
-    menu_items={
-        "Report a bug": "https://github.com/harry0703/MoneyPrinterTurbo/issues",
-        "About": "# MoneyPrinterTurbo\nSimply provide a topic or keyword for a video, and it will "
-        "automatically generate the video copy, video materials, video subtitles, "
-        "and video background music before synthesizing a high-definition short "
-        "video.\n\nhttps://github.com/harry0703/MoneyPrinterTurbo",
-    },
+    # initial_sidebar_state="auto",
+    # menu_items={
+    #     "Report a bug": "https://github.com/harry0703/MoneyPrinterTurbo/issues",
+    #     "About": "# MoneyPrinterTurbo\nSimply provide a topic or keyword for a video, and it will "
+    #     "automatically generate the video copy, video materials, video subtitles, "
+    #     "and video background music before synthesizing a high-definition short "
+    #     "video.\n\nhttps://github.com/harry0703/MoneyPrinterTurbo",
+    # },
 )
 
 
@@ -46,7 +46,7 @@ hide_streamlit_style = """
 <style>#root > div:nth-child(1) > div > div > div > div > section > div {padding-top: 0rem;}</style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-st.title(f"MoneyPrinterTurbo v{config.project_version}")
+# st.title(f"MoneyPrinterTurbo v{config.project_version}")
 
 support_locales = [
     "zh-CN",
@@ -167,7 +167,7 @@ def tr(key):
     return loc.get("Translation", {}).get(key, key)
 
 
-st.write(tr("Get Help"))
+# st.write(tr("Get Help"))
 
 llm_provider = config.app.get("llm_provider", "").lower()
 
@@ -585,7 +585,7 @@ with middle_panel:
         params.video_aspect = VideoAspect(video_aspect_ratios[selected_index][1])
 
         params.video_clip_duration = st.selectbox(
-            tr("Clip Duration"), options=[2, 3, 4, 5, 6, 7, 8, 9, 10], index=1
+            tr("Clip Duration"), options=[2, 3, 4, 5, 6, 7, 8, 9, 10], index=3
         )
         params.video_count = st.selectbox(
             tr("Number of Videos Generated Simultaneously"),
@@ -673,7 +673,7 @@ with middle_panel:
         params.voice_rate = st.selectbox(
             tr("Speech Rate"),
             options=[0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.8, 2.0],
-            index=2,
+            index=5,
         )
 
         bgm_options = [
@@ -683,7 +683,7 @@ with middle_panel:
         ]
         selected_index = st.selectbox(
             tr("Background Music"),
-            index=1,
+            index=0,
             options=range(
                 len(bgm_options)
             ),  # Use the index as the internal option value
